@@ -1,0 +1,13 @@
+{
+  "type": "module",
+  "dependencies": {
+    "@ghostery/adblocker-playwright": "^2.3.1",
+    "axios": "^1.7.9",
+    "dotenv": "^16.4.7",
+    "onnxruntime-node": "^1.16.3",
+    "pg": "^8.13.1",
+    "playwright": "^1.49.1",
+    "playwright-extra": "^4.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2"
+  }
+}
