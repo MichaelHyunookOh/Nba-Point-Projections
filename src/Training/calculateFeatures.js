@@ -43,7 +43,7 @@ import {
   oppTeamFgPercentAgainstRelativeAvg,
   oppTeamPITPAllowedAvg,
   oppTeamDrtgAgainstRelativeAvg,
-} from "../../Formulas/featuresPerGame.js";
+} from "../Formulas/featuresPerGame.js";
 import { sleep } from "../../Helpers/sleep.js";
 import { playerBoxScoreData } from "./scrapers/playerBoxScoreData.js";
 
@@ -169,8 +169,8 @@ export const calculatePlayerFeatures = (
 
       ftRateLast5: playerFTRateAvg(logs, index, 5),
       ftRateSeason: playerFTRateAvg(logs, index, index),
-      usgLast5: calculateUsgAverage(logs, index, 5),
-      usgSeason: calculateUsgAverage(logs, index, index),
+      usgLast5: calculateUsgAverage(logs, teamData, teamName, index, 5),
+      usgSeason: calculateUsgAverage(logs, teamData, teamName, index, index),
       efgLast5: calculateEFGAverage(logs, index, 5),
       efgSeason: calculateEFGAverage(logs, index, index),
       tsLast5: calculateTSAverage(logs, index, 5),

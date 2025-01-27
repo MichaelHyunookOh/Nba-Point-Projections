@@ -375,21 +375,10 @@ export const calculateUsgAverage = (
   games,
   teamData,
   team,
-  date,
   currentIndex,
   numGames
 ) => {
   const teamGames = teamData.filter((game) => game.TEAM === team);
-  const teamIndex =
-    teamGames.findIndex((game) => {
-      const gameDate = new Date(game.DATE);
-      if (gameDate.toDateString() === date) {
-        return true;
-      }
-      return false;
-    }) + 1;
-  const teamStart = Math.max(0, teamIndex - (numGames || teamIndex));
-  const teamGamesToConsider = teamGames.slice(teamStart, teamIndex);
   const start = Math.max(0, currentIndex - numGames); // Start index to get the last 5 games (or fewer if early in season)
   const playerGamesToConsider = games.slice(start, currentIndex); // Slice the last 5
   let totalPlayerFGA = 0;

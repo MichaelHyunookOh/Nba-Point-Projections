@@ -388,75 +388,108 @@ export const playerFTRateAvg = (games, currentIndex, gamesBack) => {
   return parseFloat(((totalFTA / totalFGA) * 100).toFixed(2));
 };
 
-export const calculateUsgAverage = (games, currentIndex, numGames) => {
+export const calculateUsgAverage = (
+  games,
+  teamData,
+  team,
+  date,
+  currentIndex,
+  numGames
+) => {
+  const teamGames = teamData.filter((game) => game.TEAM === team);
   const start = Math.max(0, currentIndex - numGames); // Start index to get the last 5 games (or fewer if early in season)
-  const gamesToConsider = games.slice(start, currentIndex); // Slice the last 5
-  const totalWeightedUSG = gamesToConsider.reduce(
-    (sum, game) => sum + parseFloat(game["USG%"]) * parseFloat(game["MIN"]),
-    0
-  );
-  const totalMinutesPlayed = gamesToConsider.reduce(
-    (sum, game) => sum + parseFloat(game["MIN"]),
-    0
-  );
+  const playerGamesToConsider = games.slice(start, currentIndex); // Slice the last 5
+  let totalPlayerFGA = 0;
+  let totalPlayerFTA = 0;
+  let totalPlayerTOs = 0;
+  let totalPlayerMins = 0;
+  let totalTeamMins = 0;
+  let totalTeamFGA = 0;
+  let totalTeamFTA = 0;
+  let totalTeamTOs = 0;
+  playerGamesToConsider.forEach((game) => {
+    const playedGameDate = new Date(game.MATCHUP.split(" - ")[0]);
+    const teamIndex = teamGames.findIndex((teamGame) => {
+      const gameDate = new Date(teamGame.DATE);
+      if (gameDate.toDateString() === playedGameDate.toDateString()) {
+        return true;
+      }
+      return false;
+    });
+    const teamGameLog = teamGames[teamIndex];
+    totalPlayerFGA += parseFloat(game["FGA"]);
+    totalPlayerFTA += parseFloat(game["FTA"]);
+    totalPlayerTOs += parseFloat(game["TOV"]);
+    totalPlayerMins += parseFloat(game["MIN"]);
+    totalPlayerFTA += parseFloat(game["FTA"]);
+    totalTeamFGA += parseFloat(teamGameLog["FGA"]);
+    totalTeamMins += parseFloat(teamGameLog["MIN"]);
 
-  if (!totalMinutesPlayed) {
+    totalTeamFTA += parseFloat(teamGameLog["FTA"]);
+    totalTeamTOs += parseFloat(teamGameLog["TOV"]);
+  });
+
+  if (!totalPlayerMins) {
     return 0;
   }
 
-  return parseFloat((totalWeightedUSG / totalMinutesPlayed).toFixed(2));
+  return parseFloat(
+    (
+      ((totalPlayerFGA + 0.44 * totalPlayerFTA + totalPlayerTOs) *
+        totalTeamMins *
+        100) /
+      (totalPlayerMins * (totalTeamFGA + 0.44 * totalTeamFTA + totalTeamTOs))
+    ).toFixed(2)
+  );
 };
 
 export const calculateTSAverage = (games, currentIndex, numGames) => {
   const start = Math.max(0, currentIndex - numGames); // Start index to get the last 5 games (or fewer if early in season)
-  const gamesToConsider = games.slice(start, currentIndex); // Slice the last 5
-  let totalWeightedTS = 0;
-  let totalAdjustedFGA = 0;
-
-  gamesToConsider.forEach((game) => {
-    const ts = parseFloat(game["TS%"]); // TS% for that game (already given)
-    const fga = parseFloat(game.FGA);
-    const fta = parseFloat(game.FTA);
-
-    const adjustedFGA = fga + 0.44 * fta;
-
-    totalWeightedTS += ts * adjustedFGA; // Weighted TS% for each game
-    totalAdjustedFGA += adjustedFGA; // Total attempts for weighting
+  const playerGamesToConsider = games.slice(start, currentIndex); // Slice the last 5
+  let totalPlayerFGA = 0;
+  let totalPlayerFTA = 0;
+  let totalPlayerFGM = 0;
+  let totalPlayerPTS = 0;
+  playerGamesToConsider.forEach((game) => {
+    totalPlayerFGA += parseFloat(game["FGA"]);
+    totalPlayerFTA += parseFloat(game["FTA"]);
+    totalPlayerFGM += parseFloat(game["FGM"]);
+    totalPlayerPTS += parseFloat(game["PTS"]);
   });
-  if (!totalAdjustedFGA) {
+
+  if (!totalPlayerFGA) {
     return 0;
   }
 
-  const weightedTS = totalWeightedTS / totalAdjustedFGA;
-
-  // Return the weighted TS% rounded to two decimal places
-  return parseFloat(weightedTS.toFixed(2));
+  return parseFloat(
+    (
+      (totalPlayerPTS * 100) /
+      (2 * (totalPlayerFGA + 0.44 * totalPlayerFTA))
+    ).toFixed(2)
+  );
 };
 
 export const calculateEFGAverage = (games, currentIndex, numGames) => {
   const start = Math.max(0, currentIndex - numGames); // Start index to get the last 5 games (or fewer if early in season)
-  const gamesToConsider = games.slice(start, currentIndex); // Slice the last 5
-  // Calculate weighted eFG%
-  let totalWeightedEFG = 0;
-  let totalFGA = 0;
-
-  gamesToConsider.forEach((game) => {
-    const efg = parseFloat(game["EFG%"]); // eFG% of the game
-    const fga = parseInt(game.FGA, 10); // Field Goal Attempts in that game
-
-    totalWeightedEFG += efg * fga;
-    totalFGA += fga;
+  const playerGamesToConsider = games.slice(start, currentIndex); // Slice the last 5
+  let totalPlayerFGA = 0;
+  let totalPlayerFGM = 0;
+  let totalPlayer3PM = 0;
+  playerGamesToConsider.forEach((game) => {
+    totalPlayerFGA += parseFloat(game["FGA"]);
+    totalPlayerFGM += parseFloat(game["FGM"]);
+    totalPlayer3PM += parseFloat(game["3PM"]);
   });
 
-  if (!totalFGA) {
+  if (!totalPlayerFGA) {
     return 0;
   }
 
-  // Calculate the weighted eFG%
-  const weightedEFG = totalWeightedEFG / totalFGA;
-
-  // Return the result rounded to two decimal places
-  return parseFloat(weightedEFG.toFixed(2));
+  return parseFloat(
+    (((totalPlayerFGM + 0.5 * totalPlayer3PM) * 100) / totalPlayerFGA).toFixed(
+      2
+    )
+  );
 };
 
 export const calcPointsOffTurnoversPercentage = (

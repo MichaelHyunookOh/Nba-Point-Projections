@@ -75,7 +75,7 @@ export const calculatePlayerFeatures = (
   const homeAway = playerLineData[0]?.opponent.split(" ")[0];
   const matchDescArr = lastGame.MATCHUP.split(" - ");
   const date = new Date(matchDescArr[0]);
-  const todayGameDate = "Jan 17, 2025";
+  const todayGameDate = new Date();
   const dateString = date.toDateString();
   const teamName = matchDescArr[1].split(" ")[0];
   const opposingTeam = playerLineData[0]?.opponent.split(" ")[1];
@@ -193,7 +193,6 @@ export const calculatePlayerFeatures = (
         logs,
         teamData,
         teamName,
-        dateString,
         logs.length,
         logs.length
       ),
