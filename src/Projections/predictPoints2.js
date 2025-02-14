@@ -2,6 +2,8 @@ import * as ort from "onnxruntime-node";
 
 import fs from "fs";
 
+//model that uses 2013-2024 data and without val dataset
+
 // Step 1: Load the ONNX model
 const modelPath = "src/models/model2.onnx"; // Path to your ONNX model
 

@@ -16,7 +16,7 @@ const userAgentStrings = [
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36",
 ];
 
-export const playerBoxScoreData = async (player, year, retries = 5) => {
+export const playerBoxScoreData = async (player, year, retries = 10) => {
   const url = `https://www.nba.com/stats/players/traditional?SeasonType=Regular+Season&dir=A&sort=MIN&Season=${year}`;
   const baseUrl = "https://www.nba.com";
   chromium.use(StealthPlugin());
@@ -26,7 +26,7 @@ export const playerBoxScoreData = async (player, year, retries = 5) => {
       userAgentStrings[Math.floor(Math.random() * userAgentStrings.length)],
   });
   // Start tracing for diagnostics
-  await context.tracing.start({ screenshots: true, snapshots: true });
+  // await context.tracing.start({ screenshots: true, snapshots: true });
 
   for (let attempt = 1; attempt <= retries; attempt++) {
     const page = await context.newPage();
@@ -37,6 +37,7 @@ export const playerBoxScoreData = async (player, year, retries = 5) => {
       page.setDefaultTimeout(30000);
       await page.goto(url);
       await page.waitForSelector(".Block_blockContent__6iJ_n");
+      await page.waitForTimeout(2000);
       await page.reload();
 
       // Wait for player name and click
@@ -301,7 +302,7 @@ export const playerBoxScoreData = async (player, year, retries = 5) => {
         name: player,
       }));
       if (hasAllKeys(finalPlayerData[0])) {
-        await context.tracing.stop({ path: "trace.zip" });
+        // await context.tracing.stop({ path: "trace.zip" });
         await browser.close();
         return finalPlayerData;
       } else if (attempt < retries) {
@@ -312,27 +313,28 @@ export const playerBoxScoreData = async (player, year, retries = 5) => {
         console.warn(
           `Returning incomplete data for ${player} after ${retries} attempts.`
         );
-        await context.tracing.stop({ path: "trace.zip" });
+        // await context.tracing.stop({ path: "trace.zip" });
         await browser.close();
-        return {
-          status: "failed",
-          player,
-          testObj: finalPlayerData[0],
-          getLabelsAdvanced,
-          gameLogsAdvanced,
-          boxScoreByGameAdvanced,
-          getLabelsMisc,
-          gameLogsMisc,
-          boxScoreByGameMisc,
-          getLabelsScoring,
-          gameLogsScoring,
-          boxScoreByGameScoring,
-        };
+        console.log(`status failed for ${player}`);
+        // return {
+        //   status: "failed",
+        //   player,
+        //   testObj: finalPlayerData[0],
+        //   getLabelsAdvanced,
+        //   gameLogsAdvanced,
+        //   boxScoreByGameAdvanced,
+        //   getLabelsMisc,
+        //   gameLogsMisc,
+        //   boxScoreByGameMisc,
+        //   getLabelsScoring,
+        //   gameLogsScoring,
+        //   boxScoreByGameScoring,
+        // };
       }
     } catch (error) {
       console.error(`Attempt ${attempt} failed for ${player}`, error);
       if (attempt === retries) {
-        await context.tracing.stop({ path: "trace.zip" });
+        // await context.tracing.stop({ path: "trace.zip" });
         await browser.close();
         throw new Error(`All ${retries} attempts failed for ${player}`);
       }
@@ -343,7 +345,7 @@ export const playerBoxScoreData = async (player, year, retries = 5) => {
     }
     await sleep(2000);
   }
-  await context.tracing.stop({ path: "trace.zip" });
+  // await context.tracing.stop({ path: "trace.zip" });
   await browser.close();
 };
 

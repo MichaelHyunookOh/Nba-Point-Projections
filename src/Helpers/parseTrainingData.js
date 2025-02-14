@@ -1,16 +1,16 @@
-import trainingDataV2 from "../../data/trainingData-v2.json" assert { type: "json" };
-// import trainingDataFeaturesV2 from "../../data/trainingDataFeatures-v2.json" assert { type: "json" };
+import trainingData from "../../data/trainingDataCurrentv7.json" assert { type: "json" };
+// import trainingDataFeaturesV6 from "../../data/trainingDataFeatures-v6.json" assert { type: "json" };
 
 import fs from "fs";
 
 const saveLabelsToFile = async () => {
   try {
-    const filteredForMinutes = trainingDataV2.filter((row) => row[13] >= 15);
+    const filteredForMinutes = trainingData.filter((row) => row[14] >= 15);
     const data = filteredForMinutes.map(
       (innerArray) => innerArray[innerArray.length - 1]
     );
 
-    const filePathLabels = "./data/trainingDataLabels-v2.json"; // Specify the path for the JSON file
+    const filePathLabels = "./data/trainingDataLabelsCurrentv7.json"; // Specify the path for the JSON file
 
     // Make sure the directory exists, otherwise create it
     const dir = "./data";
@@ -24,7 +24,7 @@ const saveLabelsToFile = async () => {
     // Write the JSON data to the file
     fs.writeFileSync(filePathLabels, jsonData, "utf8");
 
-    console.log("Data successfully saved to trainingDataLabels-v1.json");
+    console.log("Data successfully saved to trainingDataLabelsCurrentv2.json");
   } catch (error) {
     console.error("Error saving data to file:", error);
   }
@@ -32,10 +32,10 @@ const saveLabelsToFile = async () => {
 
 const saveFeaturesToFile = async () => {
   try {
-    const data = trainingDataV2.map((row) => row.slice(0, -1));
-    const filteredForMinutes = data.filter((row) => row[13] >= 15);
+    const data = trainingData.map((row) => row.slice(0, -1));
+    const filteredForMinutes = data.filter((row) => row[14] >= 15);
 
-    const filePathFeatures = "./data/trainingDataFeatures-v2.json"; // Specify the path for the JSON file
+    const filePathFeatures = "./data/trainingDataFeaturesCurrentv7.json"; // Specify the path for the JSON file
 
     // Make sure the directory exists, otherwise create it
     const dir = "./data";
@@ -49,7 +49,9 @@ const saveFeaturesToFile = async () => {
     // Write the JSON data to the file
     fs.writeFileSync(filePathFeatures, jsonData, "utf8");
 
-    console.log("Data successfully saved to trainingDataFeatures-v1.json");
+    console.log(
+      "Data successfully saved to trainingDataFeaturesCurrentv2.json"
+    );
   } catch (error) {
     console.error("Error saving data to file:", error);
   }
@@ -82,9 +84,9 @@ const standardizeData = (features) => {
 
 const saveStandardizedFeaturesToFile = async () => {
   try {
-    const { standardized } = standardizeData(trainingDataFeaturesV1);
+    const { standardized } = standardizeData(trainingDataFeaturesV6);
     const filePathFeaturesStandardized =
-      "./data/trainingDataStandardizedFeatures-v1.json"; // Specify the path for the JSON file
+      "./data/trainingDataStandardizedFeatures-v6.json"; // Specify the path for the JSON file
 
     // Make sure the directory exists, otherwise create it
     const dir = "./data";
@@ -99,11 +101,11 @@ const saveStandardizedFeaturesToFile = async () => {
     fs.writeFileSync(filePathFeaturesStandardized, jsonData, "utf8");
 
     console.log(
-      "Data successfully saved to trainingDataStandardizedFeatures-v1.json"
+      "Data successfully saved to trainingDataStandardizedFeatures-v6.json"
     );
   } catch (error) {
     console.error("Error saving data to file:", error);
   }
 };
 
-saveLabelsToFile();
+saveFeaturesToFile();

@@ -1,18 +1,18 @@
-import testData from "../../Data/playerBoxScores.js";
 // import testInitialData from "../../Data/GameLogs/test.js";
-import testTeamData from "../../Data/GameLogs/13-14.js";
-import testJSON from "../../Data/GameLogs/2013-14.json" assert { type: "json" };
-import testJSONLastSeason from "../../Data/GameLogs/2012-13.json" assert { type: "json" };
-import testJSONLastLastSeason from "../../Data/GameLogs/2011-12.json" assert { type: "json" };
-import testBiosData from "../../Data/GameLogs/playerBios-2013-14.js";
+import testTeamData from "../Data/Training/17-18.js";
+import testJSON from "../Data/Training/2017-18.json" assert { type: "json" };
+// import testJSONLastSeason from "../../Data/GameLogs/2012-13.json" assert { type: "json" };
+// import testJSONLastLastSeason from "../../Data/GameLogs/2011-12.json" assert { type: "json" };
+import testBiosData from "../Data/Training/playerBios-2017-18.js";
 import { chromium } from "playwright-extra";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { getEligiblePlayers } from "./getEligiblePlayers.js";
+import { getEligiblePlayers } from "./scrapers/getEligiblePlayers.js";
 import {
   ppgLastSeason,
   addDNPLogs,
+  weightedTraditionalStatAverage,
   missingOffensiveValue,
   scoringVariance,
   scoringRate,
@@ -44,7 +44,7 @@ import {
   oppTeamPITPAllowedAvg,
   oppTeamDrtgAgainstRelativeAvg,
 } from "../Formulas/featuresPerGame.js";
-import { sleep } from "../../Helpers/sleep.js";
+import { sleep } from "../Helpers/sleep.js";
 import { playerBoxScoreData } from "./scrapers/playerBoxScoreData.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -54,11 +54,9 @@ export const calculatePlayerFeatures = (
   logs,
   allPlayerLogs,
   teamData,
-  lastYearLogs,
-  lastLastYearLogs,
-  lastYear,
-  lastLastYear,
-  biosData
+  biosData,
+  gamesBackWindowPlayer = false,
+  gamesBackWindowTeams = false
 ) => {
   const playerFeatures = logs.map((game, index) => {
     const matchDescArr = game.MATCHUP.split(" - ");
@@ -67,10 +65,12 @@ export const calculatePlayerFeatures = (
     const teamName = matchDescArr[1].split(" ")[0];
     const opposingTeam = matchDescArr[1].split(" ")[2];
     const homeAway = matchDescArr[1].split(" ")[1];
-    const height = parseFloat(
-      game.height.split(" ")[1].match(/\d+(\.\d+)?/)[0]
-    );
-    const weight = parseFloat(game.weight.split(" ")[1].replace(/[^\d.]/g, ""));
+    const numGamesBackPlayer = gamesBackWindowPlayer || index;
+    const numGamesBackTeam = gamesBackWindowTeams || false;
+    // const height = parseFloat(
+    //   game.height.split(" ")[1].match(/\d+(\.\d+)?/)[0]
+    // );
+    // const weight = parseFloat(game.weight.split(" ")[1].replace(/[^\d.]/g, ""));
     const teamGames = teamData.filter((game) => game.TEAM === teamName);
     const oppTeamGames = teamData.filter((game) => game.TEAM === opposingTeam);
     const currentIndexTeam = teamGames.findIndex((game) => {
@@ -92,8 +92,8 @@ export const calculatePlayerFeatures = (
       date: dateString,
       team: matchDescArr[1].split(" ")[0],
       opp: opposingTeam,
-      height,
-      weight,
+      height: 0,
+      weight: 0,
       age: getPlayerAge(game.name, biosData),
       home: homeAway === "vs." ? 1 : 0,
       gamesPlayed: index,
@@ -104,26 +104,24 @@ export const calculatePlayerFeatures = (
         allPlayerLogs,
         []
       ),
-      previousPPG: pointsAverageAfterDate(
-        game.name,
-        lastYearLogs,
-        lastLastYearLogs,
-        lastYear,
-        lastLastYear,
-        2,
-        10
-      ),
+      previousPPG: 0,
+      ppgExpDecay: weightedTraditionalStatAverage(logs, index, "PTS", 0.2),
       ppgLast5: traditionalStatAverage(logs, index, "PTS", 5),
-      ppgSeason: traditionalStatAverage(logs, index, "PTS", index),
-      scoringVarianceSeason: scoringVariance(logs, index, index),
+      ppgSeason: traditionalStatAverage(logs, index, "PTS", numGamesBackPlayer),
+      scoringVarianceSeason: scoringVariance(logs, index, numGamesBackPlayer),
       scoringRateLast5: scoringRate(logs, index, 5),
-      scoringRateSeason: scoringRate(logs, index, index),
+      scoringRateSeason: scoringRate(logs, index, numGamesBackPlayer),
       mpgLast5: traditionalStatAverage(logs, index, "MIN", 5),
-      mpgSeason: traditionalStatAverage(logs, index, "MIN", index),
+      mpgSeason: traditionalStatAverage(logs, index, "MIN", numGamesBackPlayer),
       fgaLast5: traditionalStatAverage(logs, index, "FGA", 5),
-      fgaSeason: traditionalStatAverage(logs, index, "FGA", index),
+      fgaSeason: traditionalStatAverage(logs, index, "FGA", numGamesBackPlayer),
       threesAttemptedLast5: traditionalStatAverage(logs, index, "3PA", 5),
-      threesAttemptedSeason: traditionalStatAverage(logs, index, "3PA", index),
+      threesAttemptedSeason: traditionalStatAverage(
+        logs,
+        index,
+        "3PA",
+        numGamesBackPlayer
+      ),
       threesMadePercentageLast5: traditionalPercentageAverage(
         logs,
         index,
@@ -136,7 +134,7 @@ export const calculatePlayerFeatures = (
         index,
         "3PA",
         "3PM",
-        index
+        numGamesBackPlayer
       ),
       ftPercentageLast5: traditionalPercentageAverage(
         logs,
@@ -150,7 +148,7 @@ export const calculatePlayerFeatures = (
         index,
         "FTA",
         "FTM",
-        index
+        numGamesBackPlayer
       ),
       fbPointsPercentageLast5: traditionalPercentageAverage(
         logs,
@@ -164,17 +162,22 @@ export const calculatePlayerFeatures = (
         index,
         "FBPS",
         "PTS",
-        index
+        numGamesBackPlayer
       ),
-
       ftRateLast5: playerFTRateAvg(logs, index, 5),
-      ftRateSeason: playerFTRateAvg(logs, index, index),
+      ftRateSeason: playerFTRateAvg(logs, index, numGamesBackPlayer),
       usgLast5: calculateUsgAverage(logs, teamData, teamName, index, 5),
-      usgSeason: calculateUsgAverage(logs, teamData, teamName, index, index),
+      usgSeason: calculateUsgAverage(
+        logs,
+        teamData,
+        teamName,
+        index,
+        numGamesBackPlayer
+      ),
       efgLast5: calculateEFGAverage(logs, index, 5),
-      efgSeason: calculateEFGAverage(logs, index, index),
+      efgSeason: calculateEFGAverage(logs, index, numGamesBackPlayer),
       tsLast5: calculateTSAverage(logs, index, 5),
-      tsSeason: calculateTSAverage(logs, index, index),
+      tsSeason: calculateTSAverage(logs, index, numGamesBackPlayer),
       pointsOffTOPercentageLast5: calcPointsOffTurnoversPercentage(
         logs,
         index,
@@ -183,19 +186,43 @@ export const calculatePlayerFeatures = (
       pointsOffTOPercentageSeason: calcPointsOffTurnoversPercentage(
         logs,
         index,
-        index
+        numGamesBackPlayer
       ),
       pointsInPaintPercentageLast5: calcPITPPercentage(logs, index, 5),
-      pointsInPaintPercentageSeason: calcPITPPercentage(logs, index, index),
+      pointsInPaintPercentageSeason: calcPITPPercentage(
+        logs,
+        index,
+        numGamesBackPlayer
+      ),
       oRebRateLast5: traditionalStatAverage(logs, index, "OREB%", 5),
-      oRebRateSeason: traditionalStatAverage(logs, index, "OREB%", index),
+      oRebRateSeason: traditionalStatAverage(
+        logs,
+        index,
+        "OREB%",
+        numGamesBackPlayer
+      ),
       teamGameNumber: currentIndexTeam + 1,
       teamPaceLast5: calculateTeamPace(teamData, teamName, dateString, 5),
-      teamPaceSeason: calculateTeamPace(teamData, teamName, dateString),
+      teamPaceSeason: calculateTeamPace(
+        teamData,
+        teamName,
+        dateString,
+        numGamesBackTeam
+      ),
       teamOrtgLast5: calculateTeamOrtg(teamData, teamName, dateString, 5),
-      teamOrtgSeason: calculateTeamOrtg(teamData, teamName, dateString),
+      teamOrtgSeason: calculateTeamOrtg(
+        teamData,
+        teamName,
+        dateString,
+        numGamesBackTeam
+      ),
       teamORebRateLast5: teamOReboundRateAvg(teamData, teamName, dateString, 5),
-      teamORebRateSeason: teamOReboundRateAvg(teamData, teamName, dateString),
+      teamORebRateSeason: teamOReboundRateAvg(
+        teamData,
+        teamName,
+        dateString,
+        numGamesBackTeam
+      ),
       teamPossessionsLast5: calculateTeamPossessions(
         teamData,
         teamName,
@@ -205,7 +232,8 @@ export const calculatePlayerFeatures = (
       teamPossessionsSeason: calculateTeamPossessions(
         teamData,
         teamName,
-        dateString
+        dateString,
+        numGamesBackTeam
       ),
       oppTeamGameNumber: currentIndexOppTeam + 1,
       oppTeamPossessionsLast5: calculateTeamPossessions(
@@ -217,7 +245,8 @@ export const calculatePlayerFeatures = (
       oppTeamPossessionsSeason: calculateTeamPossessions(
         teamData,
         opposingTeam,
-        dateString
+        dateString,
+        numGamesBackTeam
       ),
       oppTeamPaceLast5: calculateTeamPace(
         teamData,
@@ -228,7 +257,8 @@ export const calculatePlayerFeatures = (
       oppTeamteamPaceSeason: calculateTeamPace(
         teamData,
         opposingTeam,
-        dateString
+        dateString,
+        numGamesBackTeam
       ),
       oppTeamPtsAllowedLast5: oppTeamPtsAllowedAvg(
         teamData,
@@ -240,7 +270,7 @@ export const calculatePlayerFeatures = (
         teamData,
         opposingTeam,
         dateString,
-        index
+        numGamesBackTeam
       ),
       oppTeamPitpAllowedLast5: oppTeamPITPAllowedAvg(
         teamData,
@@ -252,7 +282,7 @@ export const calculatePlayerFeatures = (
         teamData,
         opposingTeam,
         dateString,
-        index
+        numGamesBackTeam
       ),
       oppTeamDRebRateLast5: oppTeamDReboundRateAvg(
         teamData,
@@ -263,7 +293,8 @@ export const calculatePlayerFeatures = (
       oppTeamDRebRateSeason: oppTeamDReboundRateAvg(
         teamData,
         opposingTeam,
-        dateString
+        dateString,
+        numGamesBackTeam
       ),
       oppTeamFBPtsAllowedAvgLast5: oppTeamFbPointsAllowedAvg(
         teamData,
@@ -274,7 +305,8 @@ export const calculatePlayerFeatures = (
       oppTeamFBPtsAllowedAvgSeason: oppTeamFbPointsAllowedAvg(
         teamData,
         opposingTeam,
-        dateString
+        dateString,
+        numGamesBackTeam
       ),
       oppTeamFTRateAgainstLast5: oppTeamFTRateAgainstAvg(
         teamData,
@@ -285,10 +317,16 @@ export const calculatePlayerFeatures = (
       oppTeamFTRateAgainstSeason: oppTeamFTRateAgainstAvg(
         teamData,
         opposingTeam,
-        dateString
+        dateString,
+        numGamesBackTeam
       ),
       oppTeamDFGLast5: oppTeamDFGAvg(teamData, opposingTeam, dateString, 5),
-      oppTeamDFGSeason: oppTeamDFGAvg(teamData, opposingTeam, dateString),
+      oppTeamDFGSeason: oppTeamDFGAvg(
+        teamData,
+        opposingTeam,
+        dateString,
+        numGamesBackTeam
+      ),
       oppTeamTORateLast5: oppTeamTORateAvg(
         teamData,
         opposingTeam,
@@ -299,7 +337,7 @@ export const calculatePlayerFeatures = (
         teamData,
         opposingTeam,
         dateString,
-        index
+        numGamesBackTeam
       ),
       oppTeamThreesAttemptedAgainstPercentLast5:
         oppTeamPercentThreesTakenAgainstAvg(
@@ -309,7 +347,12 @@ export const calculatePlayerFeatures = (
           5
         ),
       oppTeamThreesAttemptedAgainstPercentSeason:
-        oppTeamPercentThreesTakenAgainstAvg(teamData, opposingTeam, dateString),
+        oppTeamPercentThreesTakenAgainstAvg(
+          teamData,
+          opposingTeam,
+          dateString,
+          numGamesBackTeam
+        ),
       oppTeam3paRelativeAgainstAvgLast5: oppTeam3paAgainstRelativeAvg(
         teamData,
         opposingTeam,
@@ -319,7 +362,8 @@ export const calculatePlayerFeatures = (
       oppTeam3paRelativeAgainstAvgSeason: oppTeam3paAgainstRelativeAvg(
         teamData,
         opposingTeam,
-        dateString
+        dateString,
+        numGamesBackTeam
       ),
       oppTeam3pPercentRelativeAgainstAvgLast5:
         oppTeam3pPercentAgainstRelativeAvg(
@@ -329,7 +373,12 @@ export const calculatePlayerFeatures = (
           5
         ),
       oppTeam3pPercentRelativeAgainstAvgSeason:
-        oppTeam3pPercentAgainstRelativeAvg(teamData, opposingTeam, dateString),
+        oppTeam3pPercentAgainstRelativeAvg(
+          teamData,
+          opposingTeam,
+          dateString,
+          numGamesBackTeam
+        ),
       oppTeamDfgPercentRelativeAgainstAvgLast5:
         oppTeamFgPercentAgainstRelativeAvg(
           teamData,
@@ -338,7 +387,12 @@ export const calculatePlayerFeatures = (
           5
         ),
       oppTeamDfgPercentRelativeAgainstAvgSeason:
-        oppTeamFgPercentAgainstRelativeAvg(teamData, opposingTeam, dateString),
+        oppTeamFgPercentAgainstRelativeAvg(
+          teamData,
+          opposingTeam,
+          dateString,
+          numGamesBackTeam
+        ),
       oppTeamDrtgRelativeAgainstAvgLast5: oppTeamDrtgAgainstRelativeAvg(
         teamData,
         opposingTeam,
@@ -348,8 +402,13 @@ export const calculatePlayerFeatures = (
       oppTeamDrtgRelativeAgainstAvgSeason: oppTeamDrtgAgainstRelativeAvg(
         teamData,
         opposingTeam,
-        dateString
+        dateString,
+        numGamesBackTeam
       ),
+      fgmLast5: traditionalStatAverage(logs, index, "FGM", 5),
+      fgmSeason: traditionalStatAverage(logs, index, "FGM", numGamesBackPlayer),
+      ftmLast5: traditionalStatAverage(logs, index, "FTM", 5),
+      ftmSeason: traditionalStatAverage(logs, index, "FTM", numGamesBackPlayer),
       points: Number(game.PTS),
     };
   });
@@ -362,15 +421,13 @@ export const calculatePlayerFeatures = (
 export const calculateAllPlayerFeatures = async (
   seasonData,
   teamData,
-  lastYearLogs,
-  lastLastYearLogs,
-  lastYear,
-  lastLastYear,
-  biosData
+  biosData,
+  gamesBackWindowPlayer,
+  gamesBackWindowTeams
 ) => {
   const allPlayerData = seasonData;
-  // const playerData = allPlayerData.filter(
-  //   (player) => player.name === "Damian Lillard"
+  // const playerDataAll = allPlayerData.filter(
+  //   (player) => player[0].name === "Blake Griffin"
   // );
 
   try {
@@ -379,21 +436,26 @@ export const calculateAllPlayerFeatures = async (
       try {
         const playerFeatures = calculatePlayerFeatures(
           playerData,
-          seasonData,
+          allPlayerData,
           teamData,
-          lastYearLogs,
-          lastLastYearLogs,
-          lastYear,
-          lastLastYear,
-          biosData
+          biosData,
+          gamesBackWindowPlayer,
+          gamesBackWindowTeams
         );
         allPlayerFeatures.push(playerFeatures);
       } catch (error) {
         console.log(
           `${playerData[0].name} ${playerData[0].MATCHUP} has this error... ${error}`
         );
+        const stackLines = error.stack.split("\n");
+        if (stackLines.length > 1) {
+          // The second line in the stack trace usually contains the file and line number
+          const relevantLine = stackLines[1].trim();
+          console.error("Error occurred at:", relevantLine);
+        }
       }
     }
+    // console.log(allPlayerFeatures);
     const formattedFeatures = allPlayerFeatures
       .flat(1)
       .map(({ opp, team, date, ...obj }) => Object.values(obj))
@@ -418,11 +480,8 @@ export const calculateAllPlayerFeatures = async (
 //   const data = await calculateAllPlayerFeatures(
 //     testJSON,
 //     testTeamData,
-//     testJSONLastSeason,
-//     testJSONLastLastSeason,
-//     "2019",
-//     "2018",
-//     testBiosData
+//     testBiosData,
+//     10
 //   );
 //   console.log(data);
 // };

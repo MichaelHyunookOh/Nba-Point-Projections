@@ -28,7 +28,7 @@ export const getGameLogs = async (year, retries = 5) => {
       PlaywrightBlocker.fromPrebuiltAdsAndTracking(fetch).then((blocker) => {
         blocker.enableBlockingInPage(page);
       });
-      await context.tracing.start({ screenshots: true, snapshots: true });
+      // await context.tracing.start({ screenshots: true, snapshots: true });
       await page.goto(url);
 
       await page.waitForTimeout(3000);
@@ -297,7 +297,7 @@ export const getGameLogs = async (year, retries = 5) => {
       );
 
       if (hasAllKeys(mergedBoxScores[0])) {
-        await context.tracing.stop({ path: "trace.zip" });
+        // await context.tracing.stop({ path: "trace.zip" });
         await browser.close();
         return mergedBoxScores;
       } else if (attempt < retries) {
@@ -306,7 +306,7 @@ export const getGameLogs = async (year, retries = 5) => {
         );
       } else {
         console.warn(`Returning incomplete data after ${retries} attempts.`);
-        await context.tracing.stop({ path: "trace.zip" });
+        // await context.tracing.stop({ path: "trace.zip" });
         await browser.close();
         return {
           status: "failed",
@@ -316,7 +316,7 @@ export const getGameLogs = async (year, retries = 5) => {
     } catch (error) {
       console.error(`Attempt ${attempt} failed`, error);
       if (attempt === retries) {
-        await context.tracing.stop({ path: "trace.zip" });
+        // await context.tracing.stop({ path: "trace.zip" });
         await browser.close();
         throw new Error(`All ${retries} attempts failed`);
       }
@@ -326,7 +326,7 @@ export const getGameLogs = async (year, retries = 5) => {
       }
     }
   }
-  await context.tracing.stop({ path: "trace.zip" });
+  // await context.tracing.stop({ path: "trace.zip" });
   await browser.close();
 };
 

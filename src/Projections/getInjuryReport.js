@@ -1,6 +1,3 @@
-import { chromium, firefox } from "playwright-extra";
-import StealthPlugin from "puppeteer-extra-plugin-stealth";
-
 // this page filters eligible players for a season by mpg and games played and outputs an array of their names
 
 export const getInjuryReport = async () => {

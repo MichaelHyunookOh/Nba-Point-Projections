@@ -11,7 +11,7 @@ const __dirname = path.dirname(__filename);
 export const getEligiblePlayersData = async (year) => {
   const players = await getEligiblePlayers(year);
   console.log(players.length);
-  const slicedPlayers = players.slice(30);
+  const slicedPlayers = players.slice(1);
   const allPlayerData = [];
   const missingPlayerData = [];
   for await (const player of slicedPlayers) {
@@ -102,4 +102,4 @@ const test = async (year) => {
   });
 };
 
-test("2022-23");
+test("2024-25");

@@ -1,5 +1,5 @@
-import features from "../../data/trainingDataStandardizedFeatures-v1.json" assert { type: "json" };
-import labels from "../../data/trainingDataLabels-v1.json" assert { type: "json" };
+import features from "../../data/trainingDataStandardizedFeatures-v6.json" assert { type: "json" };
+import labels from "../../data/trainingDataLabels-v6.json" assert { type: "json" };
 import * as tf from "@tensorflow/tfjs-node";
 
 // {
@@ -139,7 +139,7 @@ model.compile({
   console.log("Training...");
   const history = await model.fit(featureTensor, labelTensor, {
     epochs: 50, // Number of training iterations
-    batchSize: 32, // Mini-batch size for gradient descent
+    batchSize: 128, // Mini-batch size for gradient descent
     validationSplit: 0.1,
     callbacks: [
       tf.callbacks.earlyStopping({ monitor: "val_loss", patience: 10 }),

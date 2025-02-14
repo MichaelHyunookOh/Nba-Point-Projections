@@ -348,6 +348,28 @@ export const traditionalStatAverage = (
   return parseFloat((total / gamesToConsider.length).toFixed(2)); // Calculate the PPG
 };
 
+export const weightedTraditionalStatAverage = (
+  games,
+  currentIndex,
+  stat,
+  lambda = 0.2
+) => {
+  if (games.length === 0 || currentIndex === 0) return 0;
+
+  let weightedSum = 0;
+  let totalWeight = 0;
+
+  for (let i = 0; i < currentIndex; i++) {
+    const weight = Math.exp(-lambda * (currentIndex - i)); // Exponential decay
+    weightedSum += parseFloat(games[i][stat]) * weight;
+    totalWeight += weight;
+  }
+
+  return totalWeight > 0
+    ? parseFloat((weightedSum / totalWeight).toFixed(2))
+    : 0;
+};
+
 export const traditionalPercentageAverage = (
   games,
   currentIndex,
@@ -392,13 +414,12 @@ export const calculateUsgAverage = (
   games,
   teamData,
   team,
-  date,
   currentIndex,
   numGames
 ) => {
-  const teamGames = teamData.filter((game) => game.TEAM === team);
   const start = Math.max(0, currentIndex - numGames); // Start index to get the last 5 games (or fewer if early in season)
   const playerGamesToConsider = games.slice(start, currentIndex); // Slice the last 5
+  // console.log(teamGames);
   let totalPlayerFGA = 0;
   let totalPlayerFTA = 0;
   let totalPlayerTOs = 0;
@@ -408,6 +429,9 @@ export const calculateUsgAverage = (
   let totalTeamFTA = 0;
   let totalTeamTOs = 0;
   playerGamesToConsider.forEach((game) => {
+    const matchDescArr = game.MATCHUP.split(" - ");
+    const playerTeam = matchDescArr[1].split(" ")[0];
+    const teamGames = teamData.filter((game) => game.TEAM === playerTeam);
     const playedGameDate = new Date(game.MATCHUP.split(" - ")[0]);
     const teamIndex = teamGames.findIndex((teamGame) => {
       const gameDate = new Date(teamGame.DATE);
@@ -424,7 +448,6 @@ export const calculateUsgAverage = (
     totalPlayerFTA += parseFloat(game["FTA"]);
     totalTeamFGA += parseFloat(teamGameLog["FGA"]);
     totalTeamMins += parseFloat(teamGameLog["MIN"]);
-
     totalTeamFTA += parseFloat(teamGameLog["FTA"]);
     totalTeamTOs += parseFloat(teamGameLog["TOV"]);
   });

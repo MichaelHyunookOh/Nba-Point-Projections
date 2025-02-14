@@ -18,13 +18,15 @@ const createTable = async () => {
       team_name VARCHAR(50),
       opponent_name VARCHAR(50),
       prizepicks_point_line DECIMAL,
+      model1_prediction DECIMAL,
+      model2_prediction DECIMAL,
       game_date DATE
     );
   `;
   try {
     await client.connect();
     await client.query(query);
-    console.log('Table "player_predictions" created successfully!');
+    console.log('Table "player_lines" created successfully!');
 
     // You can now run your queries, such as creating tables, inserting data, etc.
   } catch (err) {

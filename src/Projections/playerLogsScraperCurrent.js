@@ -15,7 +15,6 @@ const __dirname = path.dirname(__filename);
 export const getEliblePlayerNames = async (year) => {
   const allPlayers = await getAllCurrentPlayers(year);
   const playersWithProjections = await getPointLines();
-  storePlayerLines(playersWithProjections);
 
   const injuredPlayers = await getInjuryReport();
   const playersWithProjectionsTeamsArr = playersWithProjections.map(

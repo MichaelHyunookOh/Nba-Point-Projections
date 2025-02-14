@@ -1,11 +1,11 @@
 import { chromium, firefox } from "playwright-extra";
 import { getEligiblePlayers } from "./getEligiblePlayers.js";
 import StealthPlugin from "puppeteer-extra-plugin-stealth";
-import { addLabels } from "./util/addLabels.js";
+import { addLabels } from "../util/addLabels.js";
 import { sleep } from "../../Helpers/sleep.js";
 import { PlaywrightBlocker } from "@ghostery/adblocker-playwright";
-import { hasAllKeys } from "./util/playerKeys.js";
-import { validateDataPresence } from "./util/validateDataPresence.js";
+import { hasAllKeys } from "../util/playerKeys.js";
+import { validateDataPresence } from "../util/validateDataPresence.js";
 
 // this page filters eligible players for a season by mpg and games played and outputs an array of their names
 
@@ -82,7 +82,6 @@ export const playerBios = async (year, retries = 5) => {
     } catch (error) {
       console.error(`Attempt ${attempt} failed for ${player}`, error);
       if (attempt === retries) {
-        await context.tracing.stop({ path: "trace.zip" });
         await browser.close();
         throw new Error(`All ${retries} attempts failed for ${player}`);
       }
@@ -93,7 +92,6 @@ export const playerBios = async (year, retries = 5) => {
     }
     await sleep(2000);
   }
-  await context.tracing.stop({ path: "trace.zip" });
   await browser.close();
 };
 

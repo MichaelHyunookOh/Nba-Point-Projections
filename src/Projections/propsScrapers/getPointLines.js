@@ -92,5 +92,5 @@ export const getPointLines = async () => {
 
 // (async () => {
 //   const data = await getPointLines();
-//   console.log(JSON.stringify(data));
+//   console.log(data);
 // })();
