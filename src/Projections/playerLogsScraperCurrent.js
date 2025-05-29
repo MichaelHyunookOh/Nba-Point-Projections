@@ -2,11 +2,11 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { getAllCurrentPlayers } from "./propsScrapers/getAllCurrentPlayers.js";
 import { playerBoxScoreData } from "../Training/scrapers/playerBoxScoreData.js";
-import playerData from "../Data/GameLogs/playerDataToday.json" assert { type: "json" };
 import { getPointLines } from "./propsScrapers/getPointLines.js";
 import { getInjuryReport } from "./getInjuryReport.js";
 import { normalizeText } from "./helpers/normalizeText.js";
 import { storePlayerLines } from "../storePrizePicksLines.js";
+import { sleep } from "../Helpers/sleep.js";
 import fs from "fs";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -44,8 +44,14 @@ export const getEliblePlayerNames = async (year) => {
 };
 
 export const getEligiblePlayersData = async (year) => {
+  const filePath = path.resolve(
+    __dirname,
+    `../Data/GameLogs/playerDataToday.json`
+  );
+  const data = await fs.promises.readFile(filePath, { encoding: "utf8" });
+  const currentPlayerData = JSON.parse(data); // Parse the existing data
   const eligiblePlayersArray = await getEliblePlayerNames(year);
-  const playersAlreadyScraped = playerData.map((data) =>
+  const playersAlreadyScraped = currentPlayerData.map((data) =>
     normalizeText(data[0].name)
   );
   const scrapeArr = eligiblePlayersArray.filter(
@@ -59,6 +65,8 @@ export const getEligiblePlayersData = async (year) => {
     try {
       const playerData = await playerBoxScoreData(player, year);
       allPlayerData.push(playerData);
+      const randomMs = (2 + Math.random() * (5 - 2)) * 1000;
+      await sleep(randomMs);
     } catch (error) {
       console.error(`Error calculating features for ${player}:`, error);
       missingPlayerData.push(player);
@@ -89,11 +97,14 @@ export const scrapeAndSavePlayerData = async (year) => {
       console.log("File not found, creating a new one.");
     }
 
-    // Append new data to the array
-    jsonArray.push(...newData);
+    if (newData) {
+      jsonArray.push(...newData);
+    } else {
+      console.log("Skipping null data, no changes made to the file.");
+    }
 
     // Write the updated JSON array back to the file
-    await fs.promises.writeFile(filePath, JSON.stringify(jsonArray, null, 4));
+    await fs.promises.writeFile(filePath, JSON.stringify(jsonArray, null, 2));
     console.log("Data saved successfully.");
   } catch (error) {
     console.error("Error handling file:", error);

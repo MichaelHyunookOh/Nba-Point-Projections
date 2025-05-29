@@ -330,11 +330,11 @@ export const getGameLogs = async (year, retries = 5) => {
   await browser.close();
 };
 
-const test = async () => {
-  const data = await getGameLogs("2024-25");
-  console.log(JSON.stringify(data));
-};
+// const test = async () => {
+//   const data = await getGameLogs("2024-25");
+//   console.log(JSON.stringify(data));
+// };
 // getTeams();
-test();
+// test();
 // console.log(teamKeys);
 // getAllRosters();

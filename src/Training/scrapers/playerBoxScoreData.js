@@ -16,7 +16,7 @@ const userAgentStrings = [
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36",
 ];
 
-export const playerBoxScoreData = async (player, year, retries = 10) => {
+export const playerBoxScoreData = async (player, year, retries = 7) => {
   const url = `https://www.nba.com/stats/players/traditional?SeasonType=Regular+Season&dir=A&sort=MIN&Season=${year}`;
   const baseUrl = "https://www.nba.com";
   chromium.use(StealthPlugin());
@@ -25,6 +25,7 @@ export const playerBoxScoreData = async (player, year, retries = 10) => {
     userAgent:
       userAgentStrings[Math.floor(Math.random() * userAgentStrings.length)],
   });
+
   // Start tracing for diagnostics
   // await context.tracing.start({ screenshots: true, snapshots: true });
 
@@ -44,6 +45,7 @@ export const playerBoxScoreData = async (player, year, retries = 10) => {
       await page.waitForSelector(
         ".Crom_cromSettings__ak6Hd > .Pagination_content__f2at7 > .Pagination_pageDropdown__KgjBU > div > label > div > select"
       );
+      await page.waitForTimeout(4000);
       await page.selectOption(
         ".Crom_cromSettings__ak6Hd > .Pagination_content__f2at7 > .Pagination_pageDropdown__KgjBU > div > label > div > select",
         "-1"
@@ -81,7 +83,10 @@ export const playerBoxScoreData = async (player, year, retries = 10) => {
       const paginationDropdownTrad = page.locator(
         ".Crom_cromSettings__ak6Hd > .Pagination_content__f2at7 > .Pagination_pageDropdown__KgjBU select"
       );
-      if (await paginationDropdownTrad.isVisible()) {
+      if (
+        (await paginationDropdownTrad.isVisible()) &&
+        (await paginationDropdownTrad.isEnabled())
+      ) {
         await paginationDropdownTrad.selectOption("-1");
       }
 
@@ -154,8 +159,11 @@ export const playerBoxScoreData = async (player, year, retries = 10) => {
       const paginationDropdownAdv = page.locator(
         ".Crom_cromSettings__ak6Hd > .Pagination_content__f2at7 > .Pagination_pageDropdown__KgjBU select"
       );
-      if (await paginationDropdownAdv.isVisible()) {
-        await paginationDropdownAdv.selectOption("-1");
+      if (
+        (await paginationDropdownTrad.isVisible()) &&
+        (await paginationDropdownTrad.isEnabled())
+      ) {
+        await paginationDropdownTrad.selectOption("-1");
       }
       await page.waitForSelector(
         ".Crom_container__C45Ti > table > thead > tr > th"
@@ -190,8 +198,11 @@ export const playerBoxScoreData = async (player, year, retries = 10) => {
       const paginationDropdownMisc = page.locator(
         ".Crom_cromSettings__ak6Hd > .Pagination_content__f2at7 > .Pagination_pageDropdown__KgjBU select"
       );
-      if (await paginationDropdownMisc.isVisible()) {
-        await paginationDropdownMisc.selectOption("-1");
+      if (
+        (await paginationDropdownTrad.isVisible()) &&
+        (await paginationDropdownTrad.isEnabled())
+      ) {
+        await paginationDropdownTrad.selectOption("-1");
       }
       await page.waitForSelector(
         ".Crom_container__C45Ti > table > thead > tr > th"
@@ -226,8 +237,11 @@ export const playerBoxScoreData = async (player, year, retries = 10) => {
       const paginationDropdownScoring = page.locator(
         ".Crom_cromSettings__ak6Hd > .Pagination_content__f2at7 > .Pagination_pageDropdown__KgjBU select"
       );
-      if (await paginationDropdownScoring.isVisible()) {
-        await paginationDropdownScoring.selectOption("-1");
+      if (
+        (await paginationDropdownTrad.isVisible()) &&
+        (await paginationDropdownTrad.isEnabled())
+      ) {
+        await paginationDropdownTrad.selectOption("-1");
       }
       await page.waitForSelector(
         ".Crom_container__C45Ti > table > thead > tr > th"

@@ -43,6 +43,8 @@ import {
   oppTeamFgPercentAgainstRelativeAvg,
   oppTeamPITPAllowedAvg,
   oppTeamDrtgAgainstRelativeAvg,
+  oppTeamRelativeStat,
+  calculateEPPAverage,
 } from "../Formulas/featuresPerGame.js";
 import { sleep } from "../Helpers/sleep.js";
 import { playerBoxScoreData } from "./scrapers/playerBoxScoreData.js";
@@ -105,7 +107,6 @@ export const calculatePlayerFeatures = (
         []
       ),
       previousPPG: 0,
-      ppgExpDecay: weightedTraditionalStatAverage(logs, index, "PTS", 0.2),
       ppgLast5: traditionalStatAverage(logs, index, "PTS", 5),
       ppgSeason: traditionalStatAverage(logs, index, "PTS", numGamesBackPlayer),
       scoringVarianceSeason: scoringVariance(logs, index, numGamesBackPlayer),
@@ -409,6 +410,52 @@ export const calculatePlayerFeatures = (
       fgmSeason: traditionalStatAverage(logs, index, "FGM", numGamesBackPlayer),
       ftmLast5: traditionalStatAverage(logs, index, "FTM", 5),
       ftmSeason: traditionalStatAverage(logs, index, "FTM", numGamesBackPlayer),
+      ppgExpDecay1: weightedTraditionalStatAverage(logs, index, "PTS", 0.05),
+      ppgExpDecay2: weightedTraditionalStatAverage(logs, index, "PTS", 0.07),
+      ppgExpDecay3: weightedTraditionalStatAverage(logs, index, "PTS", 0.09),
+      ppgExpDecay4: weightedTraditionalStatAverage(logs, index, "PTS", 0.1),
+      fgaExpDecay1: weightedTraditionalStatAverage(logs, index, "FGA", 0.1),
+      fgaExpDecay2: weightedTraditionalStatAverage(logs, index, "FGA", 0.2),
+      oppTeamRelativeDrtg: oppTeamRelativeStat(
+        teamData,
+        opposingTeam,
+        dateString,
+        "DEFRTG"
+      ),
+      epp1: calculateEPPAverage(logs, teamData, index, 0.05),
+      epp2: calculateEPPAverage(logs, teamData, index, 0.07),
+      epp3: calculateEPPAverage(logs, teamData, index, 0.1),
+      ftaExpDecay1: weightedTraditionalStatAverage(logs, index, "FTA", 0.1),
+      ftaExpDecay2: weightedTraditionalStatAverage(logs, index, "FTA", 0.2),
+      minExpDecay1: weightedTraditionalStatAverage(logs, index, "MIN", 0.1),
+      minExpDecay2: weightedTraditionalStatAverage(logs, index, "MIN", 0.2),
+      trend:
+        calculateEPPAverage(logs, teamData, index, 0.05) -
+        calculateEPPAverage(logs, teamData, index, 0.1),
+      momentum_ratio:
+        calculateEPPAverage(logs, teamData, index, 0.05) /
+        calculateEPPAverage(logs, teamData, index, 0.1),
+      hot_streak:
+        calculateEPPAverage(logs, teamData, index, 0.05) >
+          calculateEPPAverage(logs, teamData, index, 0.07) &&
+        calculateEPPAverage(logs, teamData, index, 0.07) >
+          calculateEPPAverage(logs, teamData, index, 0.1)
+          ? 1
+          : 0,
+      oppTeamRelativePace: oppTeamRelativeStat(
+        teamData,
+        opposingTeam,
+        dateString,
+        "PACE"
+      ),
+      oppTeamRelativePaintPtsAllowed: oppTeamRelativeStat(
+        teamData,
+        opposingTeam,
+        dateString,
+        "OPPPITP"
+      ),
+      epp5: calculateEPPAverage(logs, teamData, index, 0.03),
+      epp6: calculateEPPAverage(logs, teamData, index, 0.01),
       points: Number(game.PTS),
     };
   });
@@ -427,7 +474,7 @@ export const calculateAllPlayerFeatures = async (
 ) => {
   const allPlayerData = seasonData;
   // const playerDataAll = allPlayerData.filter(
-  //   (player) => player[0].name === "Blake Griffin"
+  //   (player) => player[0].name === "Damian Lillard"
   // );
 
   try {
@@ -481,7 +528,8 @@ export const calculateAllPlayerFeatures = async (
 //     testJSON,
 //     testTeamData,
 //     testBiosData,
-//     10
+//     10,
+//     20
 //   );
 //   console.log(data);
 // };

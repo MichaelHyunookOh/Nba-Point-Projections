@@ -1,9 +1,9 @@
 // import testInitialData from "../../Data/GameLogs/test.js";
-import testTeamData from "../Data/GameLogs/currentGameLogs.js";
+// import testTeamData from "../Data/GameLogs/currentGameLogs.js";
 import fs from "fs";
 import { ChartJSNodeCanvas } from "chartjs-node-canvas";
 import axios from "axios";
-import jstat from "jstat";
+
 // import testPlayerData from "../Data/GameLogs/playerDataToday.json" assert { type: "json" };
 import testJSONLastSeason from "../Data/Training/2023-24.json" assert { type: "json" };
 import testJSONLastLastSeason from "../Data/Training/2022-23.json" assert { type: "json" };
@@ -13,18 +13,12 @@ import { fileURLToPath } from "url";
 import { getPointLines } from "./propsScrapers/getPointLines.js";
 import { getInjuryReport } from "./getInjuryReport.js";
 import { normalizeText } from "./helpers/normalizeText.js";
-import { runModel4 } from "./predictPoints4.js";
-import { runModel2 } from "./predictPoints2.js";
-import { runModel2V2 } from "./predictPoints2-v2.js";
-import { runModel4v3 } from "./predictPoints4-v3.js";
-import { runModel4v2 } from "./predictPoints4-v2.js";
-import { runModel5 } from "./predictPoints5.js";
-import { runModel5v2 } from "./predictPoints5-v2.js";
-import { runModel6 } from "./predictPoints6.js";
-import { runModel6v2 } from "./predictPoints6-v2.js";
-import { runModel7 } from "./predictPoints7.js";
-import { runModel7v2 } from "./predictPoints7-v2.js";
-import { runModel4v2WithUncertainty } from "./predictPoints4Quantile.js";
+import { runModel9 } from "./predictPoints9.js";
+import { runModel9v2 } from "./predictPoints9-v2.js";
+import { runModel10v2 } from "./predictPoints10-v2.js";
+import { runModel10 } from "./predictPoints10.js";
+import { runModel11rmse } from "./predictPoints11.js";
+import { runModel11mae } from "./predictPoints11-v2.js";
 import { storePlayerLines } from "../storePrizePicksLines.js";
 import {
   ppgLastSeason,
@@ -61,6 +55,9 @@ import {
   oppTeamFgPercentAgainstRelativeAvg,
   oppTeamPITPAllowedAvg,
   oppTeamDrtgAgainstRelativeAvg,
+  oppTeamRelativeStat,
+  ppgMatchup,
+  calculateEPPAverage,
 } from "../Formulas/liveFeatures.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -70,10 +67,6 @@ export const calculatePlayerFeatures = (
   logs,
   allPlayerLogs,
   teamData,
-  lastYearLogs,
-  lastLastYearLogs,
-  lastYear,
-  lastLastYear,
   biosData,
   injuredPlayerNames,
   pointLinesData,
@@ -137,12 +130,6 @@ export const calculatePlayerFeatures = (
         injuredPlayerNames
       ),
       previousPPG: 0,
-      ppgExpDecay: weightedTraditionalStatAverage(
-        logs,
-        logs.length,
-        "PTS",
-        0.2
-      ),
       ppgLast5: traditionalStatAverage(logs, logs.length, "PTS", 5),
       ppgSeason: traditionalStatAverage(
         logs,
@@ -475,6 +462,102 @@ export const calculatePlayerFeatures = (
         "FTM",
         numGamesBackPlayer
       ),
+      ppgExpDecay1: weightedTraditionalStatAverage(
+        logs,
+        logs.length,
+        "PTS",
+        0.05
+      ),
+      ppgExpDecay2: weightedTraditionalStatAverage(
+        logs,
+        logs.length,
+        "PTS",
+        0.07
+      ),
+      ppgExpDecay3: weightedTraditionalStatAverage(
+        logs,
+        logs.length,
+        "PTS",
+        0.09
+      ),
+      ppgExpDecay4: weightedTraditionalStatAverage(
+        logs,
+        logs.length,
+        "PTS",
+        0.1
+      ),
+      fgaExpDecay1: weightedTraditionalStatAverage(
+        logs,
+        logs.length,
+        "FGA",
+        0.1
+      ),
+      fgaExpDecay2: weightedTraditionalStatAverage(
+        logs,
+        logs.length,
+        "FGA",
+        0.2
+      ),
+      oppTeamRealtiveDrtg: oppTeamRelativeStat(
+        teamData,
+        opposingTeam,
+        todayGameDate,
+        "DEFRTG"
+      ),
+      epp1: calculateEPPAverage(logs, teamData, logs.length, 0.05),
+      epp2: calculateEPPAverage(logs, teamData, logs.length, 0.07),
+      epp3: calculateEPPAverage(logs, teamData, logs.length, 0.1),
+      ftaExpDecay1: weightedTraditionalStatAverage(
+        logs,
+        logs.length,
+        "FTA",
+        0.1
+      ),
+      ftaExpDecay2: weightedTraditionalStatAverage(
+        logs,
+        logs.length,
+        "FTA",
+        0.2
+      ),
+      minExpDecay1: weightedTraditionalStatAverage(
+        logs,
+        logs.length,
+        "MIN",
+        0.1
+      ),
+      minExpDecay2: weightedTraditionalStatAverage(
+        logs,
+        logs.length,
+        "MIN",
+        0.2
+      ),
+      trend:
+        calculateEPPAverage(logs, teamData, logs.length, 0.05) -
+        calculateEPPAverage(logs, teamData, logs.length, 0.1),
+      momentum_ratio:
+        calculateEPPAverage(logs, teamData, logs.length, 0.05) /
+        calculateEPPAverage(logs, teamData, logs.length, 0.1),
+      hot_streak:
+        calculateEPPAverage(logs, teamData, logs.length, 0.05) >
+          calculateEPPAverage(logs, teamData, logs.length, 0.07) &&
+        calculateEPPAverage(logs, teamData, logs.length, 0.07) >
+          calculateEPPAverage(logs, teamData, logs.length, 0.1)
+          ? 1
+          : 0,
+      oppTeamRelativePace: oppTeamRelativeStat(
+        teamData,
+        opposingTeam,
+        todayGameDate,
+        "PACE"
+      ),
+      oppTeamRelativePaintPtsAllowed: oppTeamRelativeStat(
+        teamData,
+        opposingTeam,
+        todayGameDate,
+        "OPPPITP"
+      ),
+      epp5: calculateEPPAverage(logs, teamData, logs.length, 0.03),
+      epp6: calculateEPPAverage(logs, teamData, logs.length, 0.01),
     },
   ];
 
@@ -486,10 +569,6 @@ export const calculatePlayerFeatures = (
 export const calculateAllPlayerFeatures = async (
   seasonData,
   teamData,
-  lastYearLogs,
-  lastLastYearLogs,
-  lastYear,
-  lastLastYear,
   biosData,
   gamesBackWindowPlayer,
   gamesBackWindowTeams
@@ -501,7 +580,7 @@ export const calculateAllPlayerFeatures = async (
     .filter((player) => player.status === "Out")
     .map((data) => data.player);
   const normalizedInjuredPlayerNames = injuredPlayerNames.map(normalizeText);
-  console.log(normalizedInjuredPlayerNames);
+  // console.log(normalizedInjuredPlayerNames);
   // const playerData = allPlayerData.filter(
   //   (player) => player.name === "Damian Lillard"
   // );
@@ -514,10 +593,6 @@ export const calculateAllPlayerFeatures = async (
           playerData,
           seasonData,
           teamData,
-          lastYearLogs,
-          lastLastYearLogs,
-          lastYear,
-          lastLastYear,
           biosData,
           normalizedInjuredPlayerNames,
           pointLinesData,
@@ -537,6 +612,7 @@ export const calculateAllPlayerFeatures = async (
           normalizeText(data[0].playerName)
         )
     );
+    // console.log(allPlayerFeatures);
     // console.log(playersWithLines);
     const formattedFeatures = playersWithLines.map((array) => {
       const [firstObj, secondObj] = array; // Destructure the array
@@ -591,13 +667,17 @@ export const calculateAndUpdate = async () => {
   );
   const jsonData = await fs.promises.readFile(filePath, { encoding: "utf8" });
   const allPlayersData = JSON.parse(jsonData);
+  const filePathTeamLogs = path.join(
+    __dirname,
+    "../Data/GameLogs/currentGameLogs.json"
+  );
+  const jsonDataTeamLogs = await fs.promises.readFile(filePathTeamLogs, {
+    encoding: "utf8",
+  });
+  const allTeamsData = JSON.parse(jsonDataTeamLogs);
   const playerFeatures = await calculateAllPlayerFeatures(
     allPlayersData,
-    testTeamData,
-    testJSONLastSeason,
-    testJSONLastLastSeason,
-    "2024",
-    "2023",
+    allTeamsData,
     testBiosData,
     10,
     20
@@ -615,8 +695,10 @@ export const calculateAndUpdate = async () => {
     //   certaintyPercentage,
     //   std_prediction,
     // } = await runModel4v2WithUncertainty(playerData[1]);
-    const predictedPoints1 = await runModel7(playerData[1]);
-    const predictedPoints2 = await runModel7v2(playerData[1]);
+    const predictedPoints1 = await runModel11rmse(playerData[1]);
+    const predictedPoints2 = await runModel11mae(playerData[1]);
+    // const predictedPoints2 = await runModel9v2(playerData[1]);
+    // console.log(predictedPoints1, "helloooooo");
     // const predictedPoints2 = await runModel2(playerData[1]);
     // const predictedPoints3 = await runModel4v2(playerData[1]);
     // const probabilityUnder = jstat.normal.cdf(
@@ -634,9 +716,20 @@ export const calculateAndUpdate = async () => {
       delta1: predictedPoints1 - playerData[0].prizePicksLine,
       predictedPoints2,
       delta2: predictedPoints2 - playerData[0].prizePicksLine,
+      "Delta1 >= 1": "54%",
+      "Delta2 >= 1": "56.8%",
+      "Delta1 <= -2": "53.2%",
+      "Delta2 <= -2": "53.9%",
     });
   }
-  const predictedPointsWithLines = allPredictedPoints
+  const uniquePredictedPoints = allPredictedPoints.reduce((acc, obj) => {
+    const key = `${obj.name}-${obj.prizePicksLine}`;
+    if (!acc.some((item) => `${item.name}-${item.prizePicksLine}` === key)) {
+      acc.push(obj);
+    }
+    return acc;
+  }, []);
+  const predictedPointsWithLines = uniquePredictedPoints
     .filter((data) => data.prizePicksLine)
     .sort((a, b) => b.delta1 - a.delta1); // Sort descending by delta2
   postDataToGoogleSheet(predictedPointsWithLines);

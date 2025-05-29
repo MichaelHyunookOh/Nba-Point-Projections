@@ -1,4 +1,4 @@
-import trainingData from "../../data/trainingDataCurrentv7.json" assert { type: "json" };
+import trainingData from "../../data/trainingDataCurrentv11.json" assert { type: "json" };
 // import trainingDataFeaturesV6 from "../../data/trainingDataFeatures-v6.json" assert { type: "json" };
 
 import fs from "fs";
@@ -10,7 +10,7 @@ const saveLabelsToFile = async () => {
       (innerArray) => innerArray[innerArray.length - 1]
     );
 
-    const filePathLabels = "./data/trainingDataLabelsCurrentv7.json"; // Specify the path for the JSON file
+    const filePathLabels = "./data/trainingDataLabelsCurrentv11.json"; // Specify the path for the JSON file
 
     // Make sure the directory exists, otherwise create it
     const dir = "./data";
@@ -35,7 +35,7 @@ const saveFeaturesToFile = async () => {
     const data = trainingData.map((row) => row.slice(0, -1));
     const filteredForMinutes = data.filter((row) => row[14] >= 15);
 
-    const filePathFeatures = "./data/trainingDataFeaturesCurrentv7.json"; // Specify the path for the JSON file
+    const filePathFeatures = "./data/trainingDataFeaturesCurrentv11.json"; // Specify the path for the JSON file
 
     // Make sure the directory exists, otherwise create it
     const dir = "./data";
@@ -109,3 +109,4 @@ const saveStandardizedFeaturesToFile = async () => {
 };
 
 saveFeaturesToFile();
+saveLabelsToFile();

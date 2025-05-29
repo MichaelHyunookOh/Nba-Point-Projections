@@ -26,78 +26,78 @@ import biosData1718 from "../Data/Training/playerBios-2017-18.js";
 import fs from "fs";
 
 const trainTree = async () => {
-  const data2425 = await calculateAllPlayerFeatures(
-    playerLogs2425,
-    teamLogs2425,
-    biosData2425,
+  // const data2425 = await calculateAllPlayerFeatures(
+  //   playerLogs2425,
+  //   teamLogs2425,
+  //   biosData2425,
+  //   10,
+  //   20
+  // );
+  const data2324 = await calculateAllPlayerFeatures(
+    playerLogs2324,
+    teamLogs2324,
+    biosData2324,
     10,
     20
   );
-  // const data2324 = await calculateAllPlayerFeatures(
-  //   playerLogs2324,
-  //   teamLogs2324,
-  //   biosData2324,
-  //   10,
-  //   20
-  // );
-  // const data2223 = await calculateAllPlayerFeatures(
-  //   playerLogs2223,
-  //   teamLogs2223,
-  //   biosData2223,
-  //   10,
-  //   20
-  // );
-  // const data2122 = await calculateAllPlayerFeatures(
-  //   playerLogs2122,
-  //   teamLogs2122,
-  //   biosData2122,
-  //   10,
-  //   20
-  // );
-  // const data2021 = await calculateAllPlayerFeatures(
-  //   playerLogs2021,
-  //   teamLogs2021,
-  //   biosData2021,
-  //   10,
-  //   20
-  // );
-  // const data1920 = await calculateAllPlayerFeatures(
-  //   playerLogs1920,
-  //   teamLogs1920,
-  //   biosData1920,
-  //   10,
-  //   20
-  // );
-  // const data1819 = await calculateAllPlayerFeatures(
-  //   playerLogs1819,
-  //   teamLogs1819,
-  //   biosData1819,
-  //   10,
-  //   20
-  // );
-  // const data1718 = await calculateAllPlayerFeatures(
-  //   playerLogs1718,
-  //   teamLogs1718,
-  //   biosData1718,
-  //   10,
-  //   20
-  // );
-  // return data1718.concat(
-  //   data1819,
-  //   data1920,
-  //   data2021,
-  //   data2122,
-  //   data2223,
-  //   data2324
-  // );
-  return data2425;
+  const data2223 = await calculateAllPlayerFeatures(
+    playerLogs2223,
+    teamLogs2223,
+    biosData2223,
+    10,
+    20
+  );
+  const data2122 = await calculateAllPlayerFeatures(
+    playerLogs2122,
+    teamLogs2122,
+    biosData2122,
+    10,
+    20
+  );
+  const data2021 = await calculateAllPlayerFeatures(
+    playerLogs2021,
+    teamLogs2021,
+    biosData2021,
+    10,
+    20
+  );
+  const data1920 = await calculateAllPlayerFeatures(
+    playerLogs1920,
+    teamLogs1920,
+    biosData1920,
+    10,
+    20
+  );
+  const data1819 = await calculateAllPlayerFeatures(
+    playerLogs1819,
+    teamLogs1819,
+    biosData1819,
+    10,
+    20
+  );
+  const data1718 = await calculateAllPlayerFeatures(
+    playerLogs1718,
+    teamLogs1718,
+    biosData1718,
+    10,
+    20
+  );
+  return data1718.concat(
+    data1819,
+    data1920,
+    data2021,
+    data2122,
+    data2223,
+    data2324
+  );
+  // return data2425;
 };
 
 // Function to save data to a JSON file
 export const saveDataToFile = async () => {
   try {
     const data = await trainTree(); // Get the data
-    const filePath = "./data/trainingDataCurrentv7.json"; // Specify the path for the JSON file
+    const filePath = "./data/trainingData-v11.json"; // Specify the path for the JSON file
 
     // Make sure the directory exists, otherwise create it
     const dir = "./data";

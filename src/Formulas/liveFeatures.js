@@ -221,6 +221,24 @@ export const ppgLastSeason = (previousYearGames, name) => {
   return parseFloat((total / playerLogs.length).toFixed(2)); // Calculate the PPG
 };
 
+export const ppgMatchup = (games, oppTeam, fallBack) => {
+  const previousMatchups = games.filter((game) => {
+    const matchDescArr = game.MATCHUP.split(" - ");
+    const opposingTeam = matchDescArr[1].split(" ")[2];
+    if (oppTeam === opposingTeam) {
+      return game;
+    }
+  });
+  if (previousMatchups.length === 0) {
+    return fallBack;
+  }
+  const ppgAverage = previousMatchups.reduce(
+    (sum, game) => sum + parseFloat(game["PTS"]),
+    0
+  );
+  return ppgAverage / previousMatchups.length;
+};
+
 export const scoringVariance = (games, currentIndex, gamesBack) => {
   const start = Math.max(0, currentIndex - gamesBack); // Start index to get the specified number of games back
   const gamesToConsider = games.slice(start, currentIndex); // Slice the last 'gamesBack' games
@@ -348,6 +366,81 @@ export const weightedTraditionalStatAverage = (
     totalWeight += weight;
   }
 
+  return totalWeight > 0
+    ? parseFloat((weightedSum / totalWeight).toFixed(2))
+    : 0;
+};
+
+export const calculateEPPAverage = (
+  games,
+  teamData,
+  currentIndex,
+  lambda = 0.1
+) => {
+  if (games.length === 0 || currentIndex === 0) return 0;
+
+  let weightedSum = 0;
+  let totalWeight = 0;
+
+  // Process games with exponential decay weighting
+  for (let i = 0; i < currentIndex; i++) {
+    const game = games[i];
+    const weight = Math.exp(-lambda * (currentIndex - i)); // Exponential decay
+
+    // Parse matchup info to find the corresponding team game
+    const matchDescArr = game.MATCHUP.split(" - ");
+    const playerTeam = matchDescArr[1].split(" ")[0];
+    const teamGames = teamData.filter((game) => game.TEAM === playerTeam);
+    const playedGameDate = new Date(game.MATCHUP.split(" - ")[0]);
+
+    // Find the team game that matches this player's game date
+    const teamIndex = teamGames.findIndex((teamGame) => {
+      const gameDate = new Date(teamGame.DATE);
+      return gameDate.toDateString() === playedGameDate.toDateString();
+    });
+
+    // Skip if we can't find matching team game
+    if (teamIndex === -1) continue;
+
+    const teamGameLog = teamGames[teamIndex];
+
+    // Calculate eFG% = (FGM + 0.5 * 3PM) / FGA
+    const fgm = parseFloat(game.FGM || 0);
+    const fga = parseFloat(game.FGA || 0);
+    const tpm = parseFloat(game["3PM"] || 0);
+    const efg = fga > 0 ? (fgm + 0.5 * tpm) / fga : 0;
+
+    // Calculate USG% using team data
+    const fta = parseFloat(game.FTA || 0);
+    const tov = parseFloat(game.TOV || 0);
+    const playerMins = parseFloat(game.MIN || 0);
+
+    const teamFGA = parseFloat(teamGameLog.FGA || 0);
+    const teamFTA = parseFloat(teamGameLog.FTA || 0);
+    const teamTOV = parseFloat(teamGameLog.TOV || 0);
+    const teamMins = parseFloat(teamGameLog.MIN || 0);
+
+    // USG% calculation
+    const usg =
+      playerMins > 0
+        ? ((fga + 0.44 * fta + tov) * teamMins * 100) /
+          (playerMins * (teamFGA + 0.44 * teamFTA + teamTOV))
+        : 0;
+
+    // Free throw percentage
+    const ftm = parseFloat(game.FTM || 0);
+    const ftp = fta > 0 ? ftm / fta : 0;
+
+    // Calculate EPP for this game
+    // EPP = (FGA * eFG%) + (FTA * FT%) + (USG% * MPG / 48)
+    const gameEPP = fga * efg + fta * ftp + (usg * playerMins) / 48;
+
+    // Add to weighted sum
+    weightedSum += gameEPP * weight;
+    totalWeight += weight;
+  }
+
+  // Return weighted average
   return totalWeight > 0
     ? parseFloat((weightedSum / totalWeight).toFixed(2))
     : 0;
@@ -1217,4 +1310,60 @@ export const calculateTeamPossessions = (teamData, team, date, gamesBack) => {
 
   // Return the result rounded to two decimal places
   return parseFloat(possessionsAvg.toFixed(2));
+};
+
+export const oppTeamRelativeStat = (teamData, oppTeam, date, stat) => {
+  // Convert input date to Date object for comparison
+  const currentDate = new Date(date);
+
+  // Step 1: Get all games before the current date
+  const allGamesBefore = teamData.filter((game) => {
+    const gameDate = new Date(game.DATE);
+    return gameDate < currentDate;
+  });
+
+  const allGamesBeforeExcludingTeam = allGamesBefore.filter(
+    (game) => game.TEAM !== oppTeam
+  );
+
+  // Step 2: Calculate league average defensive rating from all games
+  let totalStat = 0;
+  let gameCount = 0;
+
+  allGamesBeforeExcludingTeam.forEach((game) => {
+    const teamStat = parseFloat(game[stat]);
+    // Only count valid defensive ratings
+    if (!isNaN(teamStat)) {
+      totalStat += teamStat;
+      gameCount++;
+    }
+  });
+
+  // Calculate league average defensive rating
+  const leagueAvgStat = gameCount > 0 ? totalStat / gameCount : 0;
+
+  // Step 3: Calculate opponent team's average defensive rating
+  const oppTeamGames = allGamesBefore.filter((game) => game.TEAM === oppTeam);
+
+  let oppTeamTotalStat = 0;
+  let oppTeamGameCount = 0;
+
+  oppTeamGames.forEach((game) => {
+    const gameStat = parseFloat(game[stat]);
+
+    // Only count valid defensive ratings
+    if (!isNaN(gameStat)) {
+      oppTeamTotalStat += gameStat;
+      oppTeamGameCount++;
+    }
+  });
+
+  // Calculate opponent team's average defensive rating
+  const oppTeamAvgStat =
+    oppTeamGameCount > 0 ? oppTeamTotalStat / oppTeamGameCount : 0;
+
+  // Step 4: Calculate the relative defensive rating (negative is better defense)
+  const relativeStat = parseFloat((leagueAvgStat - oppTeamAvgStat).toFixed(2));
+
+  return relativeStat;
 };
